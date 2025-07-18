@@ -134,6 +134,9 @@ docker exec -it spark-master spark-shell
 ### HDFS Commands:
 ```bash
 docker exec -it namenode hdfs dfs -ls /
+```
+
+```bash
 docker exec -it namenode hdfs dfs -mkdir /user/data
 ```
 
