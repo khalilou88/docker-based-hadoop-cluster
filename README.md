@@ -127,6 +127,9 @@ A modular Docker-based Hadoop ecosystem where you can activate only the services
 | Hadoop NameNode | http://localhost:9870 | HDFS status |
 | YARN ResourceManager | http://localhost:8088 | Job tracking |
 | Spark Master | http://localhost:8080 | Spark cluster |
+| Spark Worker 1 | http://localhost:8081 | Spark Worker 1 |
+| Spark Worker 2 | http://localhost:8082 | Spark Worker 2 |
+| Spark Application | http://localhost:4040 | When running apps |
 | HBase Master | http://localhost:16010 | HBase status |
 | Kafka Manager | http://localhost:9093  | Kafka topics |
 | Jupyter | http://localhost:8888  | Notebooks |
