@@ -91,7 +91,7 @@ function wait_for_service() {
 
     echo "Waiting for $service to be ready..."
     while [ $count -lt $max_wait ]; do
-        if docker-compose -f "${SERVICE_FILES[$service]}" ps | grep -q "Up"; then
+        if docker compose -f "${SERVICE_FILES[$service]}" ps | grep -q "Up"; then
             echo "$service is ready!"
             return 0
         fi
@@ -115,26 +115,26 @@ function start_service() {
     # Special handling for services that depend on others
     case $service in
         "hive")
-            if ! docker-compose -f docker-compose.yml ps | grep -q "Up"; then
+            if ! docker compose -f docker-compose.yml ps | grep -q "Up"; then
                 echo "Hadoop must be running before starting Hive. Starting Hadoop first..."
                 start_service "hadoop"
             fi
             ;;
         "spark")
-            if ! docker-compose -f docker-compose.yml ps | grep -q "Up"; then
+            if ! docker compose -f docker-compose.yml ps | grep -q "Up"; then
                 echo "Hadoop should be running for Spark integration. Starting Hadoop first..."
                 start_service "hadoop"
             fi
             ;;
         "hbase")
-            if ! docker-compose -f docker-compose.yml ps | grep -q "Up"; then
+            if ! docker compose -f docker-compose.yml ps | grep -q "Up"; then
                 echo "Hadoop must be running before starting HBase. Starting Hadoop first..."
                 start_service "hadoop"
             fi
             ;;
     esac
 
-    docker-compose -f "${SERVICE_FILES[$service]}" up -d
+    docker compose -f "${SERVICE_FILES[$service]}" up -d
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ $service started successfully${NC}"
@@ -165,7 +165,7 @@ function stop_service() {
     fi
 
     echo -e "${BLUE}Stopping $service...${NC}"
-    docker-compose -f "${SERVICE_FILES[$service]}" down
+    docker compose -f "${SERVICE_FILES[$service]}" down
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ $service stopped successfully${NC}"
@@ -181,9 +181,9 @@ function show_status() {
 
     for service in "${AVAILABLE_SERVICES[@]}"; do
         echo -e "\n${YELLOW}$service:${NC}"
-        if docker-compose -f "${SERVICE_FILES[$service]}" ps 2>/dev/null | grep -q "Up"; then
+        if docker compose -f "${SERVICE_FILES[$service]}" ps 2>/dev/null | grep -q "Up"; then
             echo -e "${GREEN}  ✓ Running${NC}"
-            docker-compose -f "${SERVICE_FILES[$service]}" ps --format "table {{.Service}}\t{{.Status}}\t{{.Ports}}"
+            docker compose -f "${SERVICE_FILES[$service]}" ps --format "table {{.Service}}\t{{.Status}}\t{{.Ports}}"
         else
             echo -e "${RED}  ✗ Stopped${NC}"
         fi
@@ -198,14 +198,14 @@ function show_logs() {
         return 1
     fi
 
-    docker-compose -f "${SERVICE_FILES[$service]}" logs -f
+    docker compose -f "${SERVICE_FILES[$service]}" logs -f
 }
 
 function clean_all() {
     echo -e "${YELLOW}Stopping all services and removing volumes...${NC}"
 
     for service in "${AVAILABLE_SERVICES[@]}"; do
-        docker-compose -f "${SERVICE_FILES[$service]}" down -v
+        docker compose -f "${SERVICE_FILES[$service]}" down -v
     done
 
     echo "Removing network..."
