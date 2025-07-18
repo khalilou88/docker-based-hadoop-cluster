@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Base Hadoop services - always needed
 services:
   namenode:
