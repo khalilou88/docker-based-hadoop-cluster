@@ -141,12 +141,6 @@ A modular Docker-based Hadoop ecosystem where you can activate only the services
 docker exec -it hive-server beeline -u jdbc:hive2://localhost:10000
 ```
 
-### Access Spark Shell:
-```bash
-docker exec -it spark-master spark-shell
-```
-
-
 ### HDFS Commands:
 ```bash
 docker exec -it namenode hdfs dfs -ls /

@@ -70,19 +70,6 @@ services:
       --cores 2
       --memory 2g"
 
-  spark-client:
-    image: apache/spark:latest
-    container_name: spark-client
-    depends_on:
-      - spark-master
-    environment:
-      - SPARK_MASTER_URL=spark://spark-master:7077
-    networks:
-      - hadoop-network
-    stdin_open: true
-    tty: true
-    command: tail -f /dev/null
-
 networks:
   hadoop-network:
     external: true
