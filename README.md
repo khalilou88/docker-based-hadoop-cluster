@@ -38,23 +38,41 @@ A modular Docker-based Hadoop ecosystem where you can activate only the services
 ## Management Commands
 
 ### Start Services
-```bash
-./cluster.sh start hadoop hive        # Start specific services
-./cluster.sh start all                # Start everything
-```
+   ```bash
+   ./cluster.sh start hadoop hive        # Start specific services
+   ```
+
+   ```bash
+   ./cluster.sh start all                # Start everything
+   ```
 
 ### Stop Services
-```bash
-./cluster.sh stop spark               # Stop specific service
-./cluster.sh stop all                 # Stop everything
-```
+   ```bash
+   ./cluster.sh stop spark               # Stop specific service
+   ```
+
+   ```bash
+   ./cluster.sh stop all                 # Stop everything
+   ```
 
 ### Other Commands
 ```bash
 ./cluster.sh status                   # Show status
+```
+
+```bash
 ./cluster.sh restart hive             # Restart service
+```
+
+```bash
 ./cluster.sh logs hadoop              # Show logs
+```
+
+```bash
 ./cluster.sh list                     # List available services
+```
+
+```bash
 ./cluster.sh clean                    # Stop all and remove volumes
 ```
 
