@@ -1,6 +1,7 @@
 services:
+  # ZooKeeper - Latest stable version
   zoo1:
-    image: zookeeper:3.4.10
+    image: zookeeper:3.9.2
     container_name: zoo1
     restart: always
     hostname: zoo1
@@ -9,49 +10,151 @@ services:
     environment:
       ZOO_MY_ID: 1
       ZOO_SERVERS: server.1=0.0.0.0:2888:3888
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
+      ZOO_CFG_EXTRA: "metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000"
     volumes:
       - zookeeper_data:/data
       - zookeeper_datalog:/datalog
     networks:
       - hadoop-network
+    healthcheck:
+      test: ["CMD", "zkServer.sh", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # HBase Master - Using harisekhon/hbase (well-maintained community image)
   hbase-master:
-    image: bde2020/hbase-master:1.0.0-hbase1.2.6
+    image: harisekhon/hbase:2.5
     container_name: hbase-master
     restart: always
     hostname: hbase-master
-    env_file:
-      - ./hbase-distributed-local.env
-    environment:
-      SERVICE_PRECONDITION: "namenode:9000 datanode:9864 zoo1:2181"
     depends_on:
-      - zoo1
+      zoo1:
+        condition: service_healthy
+    environment:
+      # HBase configuration
+      HBASE_CONF_hbase_rootdir: hdfs://namenode:9000/hbase
+      HBASE_CONF_hbase_cluster_distributed: "true"
+      HBASE_CONF_hbase_zookeeper_quorum: zoo1:2181
+      HBASE_CONF_hbase_zookeeper_property_dataDir: /data
+      HBASE_CONF_hbase_master_hostname: hbase-master
+      HBASE_CONF_hbase_master_port: 16000
+      HBASE_CONF_hbase_master_info_port: 16010
+      HBASE_CONF_hbase_regionserver_port: 16020
+      HBASE_CONF_hbase_regionserver_info_port: 16030
+      # Security settings
+      HBASE_CONF_hbase_security_authentication: simple
+      HBASE_CONF_hbase_security_authorization: "false"
+      # Performance settings
+      HBASE_CONF_hbase_hregion_memstore_flush_size: 134217728
+      HBASE_CONF_hbase_hregion_max_filesize: 10737418240
     ports:
-      - "16010:16010"
+      - "16000:16000"  # HBase Master RPC
+      - "16010:16010"  # HBase Master Web UI
+    volumes:
+      - hbase_master_data:/hbase-data
     networks:
       - hadoop-network
+    command: |
+      sh -c "
+        # Wait for ZooKeeper
+        until nc -z zoo1 2181; do
+          echo 'Waiting for ZooKeeper...'
+          sleep 2
+        done
+      
+        # Wait for Hadoop NameNode
+        until nc -z namenode 9000; do
+          echo 'Waiting for Hadoop NameNode...'
+          sleep 2
+        done
+      
+        # Start HBase Master
+        /opt/hbase/bin/hbase master start
+      "
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "16010"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
-  hbase-region:
-    image: bde2020/hbase-regionserver:1.0.0-hbase1.2.6
+  # HBase RegionServer
+  hbase-regionserver:
+    image: harisekhon/hbase:2.5
     container_name: hbase-regionserver
     restart: always
     hostname: hbase-regionserver
-    env_file:
-      - ./hbase-distributed-local.env
-    environment:
-      HBASE_CONF_hbase_regionserver_hostname: hbase-regionserver
-      SERVICE_PRECONDITION: "namenode:9000 datanode:9864 zoo1:2181 hbase-master:16010"
     depends_on:
-      - zoo1
-      - hbase-master
+      hbase-master:
+        condition: service_healthy
+    environment:
+      # HBase configuration
+      HBASE_CONF_hbase_rootdir: hdfs://namenode:9000/hbase
+      HBASE_CONF_hbase_cluster_distributed: "true"
+      HBASE_CONF_hbase_zookeeper_quorum: zoo1:2181
+      HBASE_CONF_hbase_zookeeper_property_dataDir: /data
+      HBASE_CONF_hbase_master_hostname: hbase-master
+      HBASE_CONF_hbase_regionserver_hostname: hbase-regionserver
+      HBASE_CONF_hbase_regionserver_port: 16020
+      HBASE_CONF_hbase_regionserver_info_port: 16030
+      # Security settings
+      HBASE_CONF_hbase_security_authentication: simple
+      HBASE_CONF_hbase_security_authorization: "false"
+      # Performance settings
+      HBASE_CONF_hbase_hregion_memstore_flush_size: 134217728
+      HBASE_CONF_hbase_hregion_max_filesize: 10737418240
     ports:
-      - "16030:16030"
+      - "16020:16020"  # RegionServer RPC
+      - "16030:16030"  # RegionServer Web UI
+    volumes:
+      - hbase_regionserver_data:/hbase-data
     networks:
       - hadoop-network
+    command: |
+      sh -c "
+        # Wait for HBase Master
+        until nc -z hbase-master 16000; do
+          echo 'Waiting for HBase Master...'
+          sleep 2
+        done
+      
+        # Start RegionServer
+        /opt/hbase/bin/hbase regionserver start
+      "
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "16030"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # HBase Shell Client (for testing)
+  hbase-shell:
+    image: harisekhon/hbase:2.5
+    container_name: hbase-shell
+    restart: "no"
+    depends_on:
+      hbase-master:
+        condition: service_healthy
+    environment:
+      HBASE_CONF_hbase_zookeeper_quorum: zoo1:2181
+      HBASE_CONF_hbase_master_hostname: hbase-master
+    networks:
+      - hadoop-network
+    command: |
+      sh -c "
+        echo 'HBase Shell client ready. Connect using:'
+        echo 'docker exec -it hbase-shell hbase shell'
+        echo 'Or run specific commands like:'
+        echo 'docker exec -it hbase-shell hbase shell -e \"list\"'
+        tail -f /dev/null
+      "
 
 volumes:
   zookeeper_data:
   zookeeper_datalog:
+  hbase_master_data:
+  hbase_regionserver_data:
 
 networks:
   hadoop-network:
