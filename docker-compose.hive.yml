@@ -1,45 +1,139 @@
 services:
+  # PostgreSQL for Hive Metastore
   hive-metastore-postgresql:
-    image: bde2020/hive-metastore-postgresql:2.3.0
+    image: postgres:15.8-alpine
     container_name: hive-metastore-postgresql
     restart: always
+    environment:
+      POSTGRES_DB: metastore
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
     volumes:
       - hive_postgresql_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     networks:
       - hadoop-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # Hive Metastore Service
   hive-metastore:
-    image: bde2020/hive:2.3.2-postgresql-metastore
+    image: apache/hive:4.0.0
     container_name: hive-metastore
     restart: always
-    command: /opt/hive/bin/hive --service metastore
-    env_file:
-      - ./hadoop.env
-    environment:
-      SERVICE_PRECONDITION: "namenode:9000 datanode:9864 hive-metastore-postgresql:5432"
     depends_on:
-      - hive-metastore-postgresql
+      hive-metastore-postgresql:
+        condition: service_healthy
+    environment:
+      # Database connection
+      DB_DRIVER: postgres
+      SERVICE_NAME: metastore
+      # PostgreSQL connection details
+      POSTGRES_HOST: hive-metastore-postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: metastore
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      # Hadoop configuration
+      HADOOP_HOME: /opt/hadoop
+      HIVE_HOME: /opt/hive
+      # Metastore configuration
+      METASTORE_PORT: 9083
     ports:
       - "9083:9083"
     networks:
       - hadoop-network
+    command: |
+      sh -c "
+        # Wait for PostgreSQL to be ready
+        until pg_isready -h hive-metastore-postgresql -p 5432 -U hive; do
+          echo 'Waiting for PostgreSQL...'
+          sleep 2
+        done
+      
+        # Initialize schema if needed
+        /opt/hive/bin/schematool -dbType postgres -initSchema --verbose || true
+      
+        # Start metastore
+        /opt/hive/bin/hive --service metastore
+      "
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9083"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # HiveServer2
   hive-server:
-    image: bde2020/hive:2.3.2-postgresql-metastore
+    image: apache/hive:4.0.0
     container_name: hive-server
     restart: always
     depends_on:
-      - hive-metastore
-    env_file:
-      - ./hadoop.env
+      hive-metastore:
+        condition: service_healthy
     environment:
-      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore-postgresql/metastore"
-      SERVICE_PRECONDITION: "hive-metastore:9083"
+      # Database connection
+      DB_DRIVER: postgres
+      SERVICE_NAME: hiveserver2
+      # PostgreSQL connection details
+      POSTGRES_HOST: hive-metastore-postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: metastore
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      # Hadoop configuration
+      HADOOP_HOME: /opt/hadoop
+      HIVE_HOME: /opt/hive
+      # HiveServer2 configuration
+      HIVESERVER2_PORT: 10000
+      HIVESERVER2_WEBUI_PORT: 10002
+      # Metastore connection
+      METASTORE_URIS: thrift://hive-metastore:9083
     ports:
-      - "10000:10000"
-      - "10002:10002"
+      - "10000:10000"  # HiveServer2 Thrift interface
+      - "10002:10002"  # HiveServer2 Web UI
     networks:
       - hadoop-network
+    command: |
+      sh -c "
+        # Wait for metastore to be ready
+        until nc -z hive-metastore 9083; do
+          echo 'Waiting for Hive Metastore...'
+          sleep 2
+        done
+      
+        # Start HiveServer2
+        /opt/hive/bin/hive --service hiveserver2
+      "
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "10000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Beeline client for testing
+  hive-client:
+    image: apache/hive:4.0.0
+    container_name: hive-client
+    restart: "no"
+    depends_on:
+      hive-server:
+        condition: service_healthy
+    environment:
+      HADOOP_HOME: /opt/hadoop
+      HIVE_HOME: /opt/hive
+    networks:
+      - hadoop-network
+    command: |
+      sh -c "
+        echo 'Hive client ready. Connect using:'
+        echo 'docker exec -it hive-client beeline -u jdbc:hive2://hive-server:10000'
+        tail -f /dev/null
+      "
 
 volumes:
   hive_postgresql_data:

@@ -1,70 +1,84 @@
 # Base Hadoop services - always needed
 services:
   namenode:
-    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    image: apache/hadoop:3.4.1
     container_name: namenode
     restart: always
+    hostname: namenode
     ports:
       - "9870:9870"
       - "9000:9000"
     volumes:
-      - hadoop_namenode:/hadoop/dfs/name
+      - hadoop_namenode:/opt/hadoop/dfs/name
     environment:
       - CLUSTER_NAME=hadoop-cluster
-    env_file:
-      - ./hadoop.env
+      - ENSURE_NAMENODE_DIR=/opt/hadoop/dfs/name
+    command: ["hdfs", "namenode"]
     networks:
       - hadoop-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9870/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   datanode:
-    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    image: apache/hadoop:3.4.1
     container_name: datanode
     restart: always
+    hostname: datanode
     volumes:
-      - hadoop_datanode:/hadoop/dfs/data
+      - hadoop_datanode:/opt/hadoop/dfs/data
     environment:
-      SERVICE_PRECONDITION: "namenode:9870"
-    env_file:
-      - ./hadoop.env
+      - ENSURE_DATANODE_DIR=/opt/hadoop/dfs/data
+    command: ["hdfs", "datanode"]
+    depends_on:
+      namenode:
+        condition: service_healthy
     networks:
       - hadoop-network
 
   resourcemanager:
-    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    image: apache/hadoop:3.4.1
     container_name: resourcemanager
     restart: always
-    environment:
-      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode:9864"
-    env_file:
-      - ./hadoop.env
+    hostname: resourcemanager
     ports:
       - "8088:8088"
+    environment:
+      - ENSURE_RESOURCEMANAGER_DIR=/opt/hadoop/logs/yarn
+    command: ["yarn", "resourcemanager"]
+    depends_on:
+      namenode:
+        condition: service_healthy
     networks:
       - hadoop-network
 
   nodemanager:
-    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    image: apache/hadoop:3.4.1
     container_name: nodemanager
     restart: always
+    hostname: nodemanager
     environment:
-      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode:9864 resourcemanager:8088"
-    env_file:
-      - ./hadoop.env
+      - ENSURE_NODEMANAGER_DIR=/opt/hadoop/logs/yarn
+    command: ["yarn", "nodemanager"]
+    depends_on:
+      - resourcemanager
     networks:
       - hadoop-network
 
   historyserver:
-    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
+    image: apache/hadoop:3.4.1
     container_name: historyserver
     restart: always
-    environment:
-      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode:9864 resourcemanager:8088"
+    hostname: historyserver
     volumes:
-      - hadoop_historyserver:/hadoop/yarn/timeline
-    env_file:
-      - ./hadoop.env
+      - hadoop_historyserver:/opt/hadoop/logs/yarn
     ports:
       - "8188:8188"
+    command: ["yarn", "timelineservice"]
+    depends_on:
+      - resourcemanager
     networks:
       - hadoop-network
 
