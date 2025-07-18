@@ -4,8 +4,8 @@ services:
     container_name: spark-master
     restart: always
     ports:
-      - 8080:8080
-      - 7077:7077
+      - "8080:8080"
+      - "7077:7077"
     environment:
       - INIT_DAEMON_STEP=setup_spark
       - SPARK_MASTER_OPTS="-Dspark.driver.port=7001 -Dspark.fileserver.port=7002 -Dspark.broadcast.port=7003 -Dspark.replClassServer.port=7004 -Dspark.blockManager.port=7005 -Dspark.executor.port=7006 -Dspark.ui.port=4040 -Dspark.broadcast.factory=org.apache.spark.broadcast.HttpBroadcastFactory"
@@ -19,7 +19,7 @@ services:
     depends_on:
       - spark-master
     ports:
-      - 8081:8081
+      - "8081:8081"
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_CORES=2
@@ -36,7 +36,7 @@ services:
     depends_on:
       - spark-master
     ports:
-      - 8082:8081
+      - "8082:8081"
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_CORES=2
