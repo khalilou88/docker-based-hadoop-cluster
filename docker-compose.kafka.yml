@@ -1,6 +1,6 @@
 services:
   kafka-zookeeper:
-    image: zookeeper:3.4.10
+    image: zookeeper:3.9.2
     container_name: kafka-zookeeper
     restart: always
     hostname: kafka-zookeeper
@@ -16,7 +16,7 @@ services:
       - hadoop-network
 
   kafka:
-    image: wurstmeister/kafka:2.13-2.8.1
+    image: confluentinc/cp-kafka:7.6.1
     container_name: kafka
     restart: always
     ports:
@@ -24,27 +24,52 @@ services:
     depends_on:
       - kafka-zookeeper
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: kafka
-      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: kafka-zookeeper:2181
-      KAFKA_CREATE_TOPICS: "test-topic:1:1,events:1:1,logs:1:1"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     volumes:
-      - kafka_data:/kafka
+      - kafka_data:/var/lib/kafka/data
     networks:
       - hadoop-network
 
-  kafka-manager:
-    image: hlebalbau/kafka-manager:stable
-    container_name: kafka-manager
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
     restart: always
     ports:
-      - "9093:9093"
+      - "9093:8080"
     depends_on:
       - kafka
     environment:
-      ZK_HOSTS: "kafka-zookeeper:2181"
-      APPLICATION_SECRET: "random-secret"
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: kafka-zookeeper:2181
+    networks:
+      - hadoop-network
+
+  # Optional: Create topics using a separate container
+  kafka-topics:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka-topics
+    depends_on:
+      - kafka
+    command: >
+      bash -c "
+        # Wait for Kafka to be ready
+        kafka-topics --bootstrap-server kafka:9092 --list
+      
+        # Create topics
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic test-topic --replication-factor 1 --partitions 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic events --replication-factor 1 --partitions 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic logs --replication-factor 1 --partitions 1
+      
+        echo 'Topics created successfully'
+      "
     networks:
       - hadoop-network
 
