@@ -61,11 +61,11 @@ services:
         # Start metastore
         /opt/hive/bin/hive --service metastore
       "
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "9083"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+#    healthcheck:
+#      test: ["CMD", "nc", "-z", "localhost", "9083"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
 
   # HiveServer2
   hive-server:
