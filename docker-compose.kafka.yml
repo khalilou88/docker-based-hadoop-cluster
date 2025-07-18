@@ -20,7 +20,7 @@ services:
     container_name: kafka
     restart: always
     ports:
-      - 9092:9092
+      - "9092:9092"
     depends_on:
       - kafka-zookeeper
     environment:
@@ -39,7 +39,7 @@ services:
     container_name: kafka-manager
     restart: always
     ports:
-      - "9000:9000"
+      - "9093:9093"
     depends_on:
       - kafka
     environment:

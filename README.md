@@ -31,9 +31,9 @@ A modular Docker-based Hadoop ecosystem where you can activate only the services
 | **hadoop** | Core Hadoop (HDFS, YARN, MapReduce) | 9870, 8088, 8188 |
 | **hive** | Hive Server with PostgreSQL metastore | 10000, 9083 |
 | **spark** | Spark Master and Workers | 8080, 7077, 8081-8082 |
-| **hbase** | HBase with Zookeeper | 16010, 16030, 2181 |
-| **kafka** | Kafka with Management UI | 9092, 9000, 2182 |
-| **dev-tools** | Jupyter, Airflow, Portainer | 8888, 8083, 9443 |
+| **hbase** | HBase with Zookeeper | 16010, 16030, 2181   |
+| **kafka** | Kafka with Management UI | 9092, 9093, 2182     |
+| **dev-tools** | Jupyter, Airflow, Portainer | 8888, 8083, 9443     |
 
 ## Management Commands
 
@@ -94,10 +94,10 @@ A modular Docker-based Hadoop ecosystem where you can activate only the services
 | YARN ResourceManager | http://localhost:8088 | Job tracking |
 | Spark Master | http://localhost:8080 | Spark cluster |
 | HBase Master | http://localhost:16010 | HBase status |
-| Kafka Manager | http://localhost:9000 | Kafka topics |
-| Jupyter | http://localhost:8888 | Notebooks |
-| Airflow | http://localhost:8083 | Workflows (admin/admin) |
-| Portainer | http://localhost:9443 | Container
+| Kafka Manager | http://localhost:9093  | Kafka topics |
+| Jupyter | http://localhost:8888  | Notebooks |
+| Airflow | http://localhost:8083  | Workflows (admin/admin) |
+| Portainer | http://localhost:9443  | Container
 
 
 ## Common Commands:

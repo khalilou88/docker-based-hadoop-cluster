@@ -36,7 +36,7 @@ declare -A SERVICE_PORTS=(
     ["hive"]="10000 (HiveServer2), 9083 (Metastore)"
     ["spark"]="8080 (Master UI), 7077 (Master), 8081-8082 (Workers)"
     ["hbase"]="16010 (Master), 16030 (RegionServer), 2181 (Zookeeper)"
-    ["kafka"]="9092 (Kafka), 9000 (Manager), 2182 (Zookeeper)"
+    ["kafka"]="9092 (Kafka), 9093 (Manager), 2182 (Zookeeper)"
     ["dev-tools"]="8888 (Jupyter), 8083 (Airflow), 9443 (Portainer)"
 )
 
