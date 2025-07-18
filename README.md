@@ -33,7 +33,7 @@ A modular Docker-based Hadoop ecosystem where you can activate only the services
 | **spark** | Spark Master and Workers | 8080, 7077, 8081-8082 |
 | **hbase** | HBase with Zookeeper | 16010, 16030, 2181   |
 | **kafka** | Kafka with Management UI | 9092, 9093, 2182     |
-| **dev-tools** | Jupyter, Airflow, Portainer | 8888, 8083, 9443     |
+| **dev-tools** | Jupyter, Airflow, Portainer | 8888, 8083, 9001     |
 
 ## Management Commands
 
@@ -131,7 +131,7 @@ A modular Docker-based Hadoop ecosystem where you can activate only the services
 | Kafka Manager | http://localhost:9093  | Kafka topics |
 | Jupyter | http://localhost:8888  | Notebooks |
 | Airflow | http://localhost:8083  | Workflows (admin/admin) |
-| Portainer | http://localhost:9443  | Container
+| Portainer | http://localhost:9001  | Container
 
 
 ## Common Commands:
