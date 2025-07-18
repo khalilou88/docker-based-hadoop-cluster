@@ -16,11 +16,11 @@ services:
     command: ["hdfs", "namenode"]
     networks:
       - hadoop-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9870/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:9870/"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
 
   datanode:
     image: apache/hadoop:3.4.1

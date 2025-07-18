@@ -25,7 +25,7 @@ services:
 
   # HBase Master - Using harisekhon/hbase (well-maintained community image)
   hbase-master:
-    image: harisekhon/hbase:2.5
+    image: harisekhon/hbase:latest
     container_name: hbase-master
     restart: always
     hostname: hbase-master
@@ -81,7 +81,7 @@ services:
 
   # HBase RegionServer
   hbase-regionserver:
-    image: harisekhon/hbase:2.5
+    image: harisekhon/hbase:latest
     container_name: hbase-regionserver
     restart: always
     hostname: hbase-regionserver
@@ -130,7 +130,7 @@ services:
 
   # HBase Shell Client (for testing)
   hbase-shell:
-    image: harisekhon/hbase:2.5
+    image: harisekhon/hbase:latest
     container_name: hbase-shell
     restart: "no"
     depends_on:
